@@ -1,16 +1,14 @@
-# 05_nbo_engine.R
-# Building the Next Best Offer (NBO) Engine
-
 library(data.table)
 library(arules)
 library(jsonlite)
+library(here)  # added here package for path handling
 
 # -------------------------------
-# 1. Load required data
+# 1. Load required data using here()
 # -------------------------------
-retail <- fread("data/processed/retail_clean.csv")
-rfm <- fread("data/processed/rfm_segmented.csv")
-rules <- readRDS("data/processed/association_rules.rds")
+retail <- fread(here("data", "processed", "retail_clean.csv"))
+rfm <- fread(here("data", "processed", "rfm_segmented.csv"))
+rules <- readRDS(here("data", "processed", "association_rules.rds"))
 
 # -------------------------------
 # 2. Compute global popularity of items
@@ -42,7 +40,8 @@ compute_nbo_score <- function(customer_id, top_k = 5) {
   if (length(lhs_items) == 0) return(data.table(Offer = "No purchase history", Score = NA))
   
   # Candidate rules matching customer's items
-  matched_rules <- subset(rules, lhs %pin% lhs_items)  # partial match
+  matched_rules <- subset(rules, 
+                          Reduce(`|`, lapply(lhs_items, function(x) lhs %pin% x)))
   if (length(matched_rules) == 0) return(data.table(Offer = "No related rules", Score = NA))
   
   rule_df <- as(matched_rules, "data.frame")
@@ -90,6 +89,6 @@ json_output <- toJSON(list(
   recommendations = nbo_result
 ), pretty = TRUE, auto_unbox = TRUE)
 
-write(json_output, file = "data/processed/sample_nbo_output.json")
+write(json_output, file = here("data", "processed", "sample_nbo_output.json"))
 
 cat("✅ NBO Engine complete. Sample output saved: data/processed/sample_nbo_output.json\n")

@@ -33,8 +33,9 @@ cat("✅ Transactions created: ", length(transactions), "\n")
 # Support = frequency threshold; Confidence = reliability of rule
 rules <- apriori(
   transactions,
-  parameter = list(supp = 0.001, conf = 0.3, minlen = 2)
+  parameter = list(supp = 0.001, conf = 0.3, minlen = 2, maxlen = 10)
 )
+
 
 # Summary of rules
 summary(rules)
@@ -67,9 +68,12 @@ fwrite(rules_df, "data/processed/association_rules.csv")
 # -------------------------------
 # Top 20 rules by lift
 top20 <- head(rules_pruned, 20)
-plot(top20, method = "graph", control = list(type = "items"))
+plot(top20, method = "graph", engine = "igraph")
 
 # Support vs Confidence scatter
-plot(rules_pruned, measure = c("support", "confidence"), shading = "lift")
+plot(rules_pruned, measure = c("support", "confidence"), shading = "lift", jitter = 0)
+
+top10_df <- as(head(rules_pruned, 10), "data.frame")
+fwrite(top10_df, "data/processed/top10_rules.csv")
 
 cat("✅ Association rule mining complete.\n")
